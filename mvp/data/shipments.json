@@ -1,0 +1,31 @@
+{
+  "_comment": "Logistics signals consolidated from the fragmented sources named in the case (EDI feeds, supplier email, carrier spreadsheets). The ETA tool reasons over these to produce a single real-time ETA, which TMC lacks today.",
+  "shipments": [
+    {
+      "shipment_id": "SHP-90021",
+      "po_id": "PO-558210",
+      "part": "SVC-2200",
+      "supplier": "SUP-NEXA",
+      "qty": 900,
+      "source": "EDI-856-ASN",
+      "origin": "Stuttgart DC inbound (ex-Nexa)",
+      "carrier": "DB Schenker",
+      "promised_eta": "2026-06-30",
+      "last_known_status": "AWAITING_COMPONENTS_AT_SUPPLIER",
+      "notes": "Nexa email 2026-06-16: 'MCU components delayed from our supplier, monitoring.'"
+    },
+    {
+      "shipment_id": "SHP-90044",
+      "po_id": "PO-SP-7781",
+      "part": "Motor-control MCU (chip)",
+      "supplier": "SUP-SILICONPATH",
+      "qty": 5000,
+      "source": "CARRIER-SPREADSHEET",
+      "origin": "PORT-KAOHSIUNG",
+      "carrier": "Evergreen",
+      "promised_eta": "2026-06-22",
+      "last_known_status": "AT_PORT_NOT_LOADED",
+      "notes": "Vessel booking unconfirmed; port congestion flag raised by freight forwarder."
+    }
+  ]
+}

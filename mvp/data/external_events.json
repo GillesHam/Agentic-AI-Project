@@ -1,0 +1,42 @@
+{
+  "_comment": "External risk signals (news, weather, port, geopolitical) the Risk Intelligence agent perceives. In production these come from news/weather APIs + web search; here they are mocked so the demo is deterministic and offline.",
+  "as_of": "2026-06-18",
+  "events": [
+    {
+      "event_id": "EVT-7001",
+      "type": "weather",
+      "severity": "high",
+      "headline": "Typhoon Mawar intensifies, Kaohsiung port operations suspended 48-72h",
+      "location": "PORT-KAOHSIUNG",
+      "region": "APAC",
+      "published": "2026-06-18T06:00:00Z"
+    },
+    {
+      "event_id": "EVT-7002",
+      "type": "supplier_news",
+      "severity": "high",
+      "headline": "SiliconPath Semiconductors halts fab output after power-grid fault in Taiwan",
+      "entity": "SUP-SILICONPATH",
+      "region": "APAC",
+      "published": "2026-06-17T22:10:00Z"
+    },
+    {
+      "event_id": "EVT-7003",
+      "type": "geopolitical",
+      "severity": "medium",
+      "headline": "New export-licensing review announced for rare-earth refined materials",
+      "entity": "SUP-RAREEARTH-CO",
+      "region": "APAC",
+      "published": "2026-06-15T09:00:00Z"
+    },
+    {
+      "event_id": "EVT-7004",
+      "type": "logistics",
+      "severity": "low",
+      "headline": "Minor rail maintenance scheduled on Northern Italy corridor",
+      "location": "IT-RAIL-NORTH",
+      "region": "EU",
+      "published": "2026-06-14T09:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Supply Chain Sentinel MVP
+#
+# The default 'sim' backend uses ONLY the Python standard library — nothing to install.
+# Install the line below only if you want to run the optional Claude-backed briefing:
+#
+#   pip install anthropic
+#   export ANTHROPIC_API_KEY=...
+#   SENTINEL_LLM=claude python3 run_demo.py
+#
+anthropic>=0.40.0 ; extra == "live"

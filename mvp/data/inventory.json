@@ -1,0 +1,25 @@
+{
+  "_comment": "On-hand inventory and consumption for critical parts at TMC plants. 'daily_consumption' lets the agent compute the inventory runway (days of cover) and predict a stockout date.",
+  "as_of": "2026-06-18",
+  "items": {
+    "SVC-2200": {
+      "plant": "Stuttgart",
+      "on_hand_units": 420,
+      "safety_stock_units": 300,
+      "daily_consumption_units": 60,
+      "open_po": {
+        "po_id": "PO-558210",
+        "supplier": "SUP-NEXA",
+        "qty": 900,
+        "promised_eta": "2026-06-30"
+      }
+    },
+    "BRG-118": {
+      "plant": "Stuttgart",
+      "on_hand_units": 1500,
+      "safety_stock_units": 400,
+      "daily_consumption_units": 40,
+      "open_po": null
+    }
+  }
+}

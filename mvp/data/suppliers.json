@@ -1,0 +1,82 @@
+{
+  "_comment": "Multi-tier supplier graph for Titan Manufacturing Corporation (TMC). Edges express 'supplies_to'. This is the data the Supplier Graph tool reads to give the agent visibility BEYOND Tier-1 (a core underlying issue in the case).",
+  "parts": {
+    "SVC-2200": {
+      "name": "Servo Motor Controller",
+      "criticality": "critical",
+      "used_in_lines": ["STG-CNC-LINE-1", "STG-CNC-LINE-2"],
+      "plants": ["Stuttgart"],
+      "qualified_suppliers": ["SUP-NEXA", "SUP-ALTACTRL"]
+    },
+    "BRG-118": {
+      "name": "Precision Spindle Bearing",
+      "criticality": "high",
+      "used_in_lines": ["STG-CNC-LINE-1"],
+      "plants": ["Stuttgart"],
+      "qualified_suppliers": ["SUP-ROLLTEC"]
+    }
+  },
+  "suppliers": {
+    "SUP-NEXA": {
+      "name": "Nexa Drives GmbH",
+      "tier": 1,
+      "country": "Germany",
+      "region": "EU",
+      "supplies_parts": ["SVC-2200"],
+      "standard_lead_time_days": 12,
+      "on_time_delivery_rate": 0.91,
+      "depends_on": ["SUP-SILICONPATH", "SUP-MAGNATEK"]
+    },
+    "SUP-ALTACTRL": {
+      "name": "AltaControl Systems",
+      "tier": 1,
+      "country": "Poland",
+      "region": "EU",
+      "supplies_parts": ["SVC-2200"],
+      "standard_lead_time_days": 21,
+      "on_time_delivery_rate": 0.88,
+      "qualified_alternate": true,
+      "unit_cost_premium_pct": 9,
+      "depends_on": ["SUP-MAGNATEK"]
+    },
+    "SUP-ROLLTEC": {
+      "name": "RollTec Bearings",
+      "tier": 1,
+      "country": "Italy",
+      "region": "EU",
+      "supplies_parts": ["BRG-118"],
+      "standard_lead_time_days": 15,
+      "on_time_delivery_rate": 0.95,
+      "depends_on": []
+    },
+    "SUP-SILICONPATH": {
+      "name": "SiliconPath Semiconductors",
+      "tier": 2,
+      "country": "Taiwan",
+      "region": "APAC",
+      "supplies_component": "Motor-control MCU (chip)",
+      "ships_via_port": "PORT-KAOHSIUNG",
+      "standard_lead_time_days": 28,
+      "depends_on": ["SUP-RAREEARTH-CO"],
+      "single_source": true
+    },
+    "SUP-MAGNATEK": {
+      "name": "MagnaTek Magnetics",
+      "tier": 2,
+      "country": "Germany",
+      "region": "EU",
+      "supplies_component": "Servo magnets",
+      "standard_lead_time_days": 10,
+      "depends_on": ["SUP-RAREEARTH-CO"]
+    },
+    "SUP-RAREEARTH-CO": {
+      "name": "RareEarth Co. (mine + refinery)",
+      "tier": 3,
+      "country": "China",
+      "region": "APAC",
+      "supplies_component": "Neodymium rare-earth material",
+      "standard_lead_time_days": 35,
+      "depends_on": []
+    }
+  }
+}
