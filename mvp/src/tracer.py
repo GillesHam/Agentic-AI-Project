@@ -30,6 +30,16 @@ _C = {
 ENABLE_COLOR = sys.stdout.isatty()
 SLOW = False  # set True for a paced live demo
 
+# Optional structured event sink. If set to a list, every tracer call also appends a
+# machine-readable event dict here, so a UI (e.g. the Streamlit dashboard) can replay
+# exactly what the agents did. None = console-only (the original CLI behaviour).
+SINK = None
+
+
+def _emit(event):
+    if SINK is not None:
+        SINK.append(event)
+
 
 def _c(tag):
     return _C.get(tag, "") if ENABLE_COLOR else ""
@@ -42,10 +52,12 @@ def _reset():
 def banner(title):
     line = "=" * 78
     print(f"\n{_c('AGENT')}{line}\n  {title}\n{line}{_reset()}\n")
+    _emit({"type": "banner", "title": title})
 
 
 def agent_header(agent_name, role):
     print(f"{_c('AGENT')}┌─ AGENT: {agent_name}{_reset()}  {_c('DIM')}({role}){_reset()}")
+    _emit({"type": "agent_start", "name": agent_name, "role": role})
 
 
 def step(phase, message, detail=None):
@@ -55,6 +67,8 @@ def step(phase, message, detail=None):
     if detail:
         for line in str(detail).splitlines():
             print(f"             {_c('DIM')}{line}{_reset()}")
+    _emit({"type": "step", "phase": phase, "message": message,
+           "detail": str(detail) if detail else None})
     if SLOW:
         time.sleep(0.8)
 
@@ -68,24 +82,29 @@ def tool_call(tool_name, args, action_type, requires_approval):
         f"{_c('AGENT')}{tool_name}{_reset()}({_fmt_args(args)})  "
         f"{_c('DIM')}[{action_type}]{_reset()}{flag}"
     )
+    _emit({"type": "tool_call", "tool": tool_name, "args": _fmt_args(args),
+           "action_type": action_type, "requires_approval": requires_approval})
     if SLOW:
         time.sleep(0.6)
 
 
 def tool_result(tool_name, summary):
     print(f"  {_c('OBSERVE')}[OBSERVE ]{_reset()} {tool_name} -> {summary}")
+    _emit({"type": "tool_result", "tool": tool_name, "summary": str(summary)})
     if SLOW:
         time.sleep(0.6)
 
 
 def hitl(message):
     print(f"\n  {_c('HITL')}*** HUMAN-IN-THE-LOOP ***{_reset()} {message}\n")
+    _emit({"type": "hitl", "message": message})
     if SLOW:
         time.sleep(0.6)
 
 
 def agent_footer():
     print(f"{_c('AGENT')}└─{_reset()}")
+    _emit({"type": "agent_end"})
 
 
 def _fmt_args(args):

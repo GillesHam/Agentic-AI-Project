@@ -1,0 +1,4 @@
+# Dependencies for the interactive demo dashboard (streamlit_app.py).
+# The core MVP (run_demo.py) needs none of these; it is pure standard-library Python.
+streamlit>=1.34
+# Graphviz rendering uses Streamlit's built-in viewer (DOT string), no system Graphviz needed.

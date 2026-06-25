@@ -31,13 +31,15 @@ Volatility & Risk* in the case study (see [docs/01_problem_statement.md](docs/01
 │   ├── 04_agent_prompts_and_tools.md   ← DELIVERABLE to send before the presentation
 │   ├── 05_demo_flow.md            ← exact demo script + expected output
 │   └── 06_risks_and_mitigations.md
-├── presentation/
-│   ├── Supply_Chain_Sentinel.pptx ← ★ the slides (PowerPoint, 16:9, with speaker notes)
-│   ├── build_pptx.py              ← regenerates the .pptx (edit team names here)
-│   └── Supply_Chain_Sentinel.md   ← deck source (Marp markdown) + speaker notes
+├── presentation/                  ← three deck versions (each .pptx + Marp .md + build script)
+│   ├── Supply_Chain_Sentinel.*            ← v1: board-level business pitch
+│   ├── Supply_Chain_Sentinel_Technical.*  ← v2: business + technical hybrid (rubric-tagged)
+│   └── Supply_Chain_Sentinel_Design.*     ← v3: technical design / architecture deep dive
 ├── mvp/                           ← runnable MVP (pure Python, no API key needed)
-│   ├── run_demo.py
-│   ├── requirements.txt
+│   ├── run_demo.py                ← CLI demo
+│   ├── streamlit_app.py           ← ★ interactive demo dashboard (live HITL, graph, KPIs)
+│   ├── sentinel_runtime.py        ← bridge that runs the real agents and captures the trace
+│   ├── requirements.txt / app_requirements.txt
 │   ├── src/                       ← orchestrator, 4 sub-agents, tools, LLM layer, tracer
 │   └── data/                      ← mock SCADA/EDI/ERP/news datasets
 └── (original PDFs: assignment, handout, case study)
@@ -60,6 +62,19 @@ standard library. To use a real Claude model for the final briefing:
 pip install anthropic
 export ANTHROPIC_API_KEY=...    # your key
 SENTINEL_LLM=claude python3 run_demo.py
+```
+
+## Interactive demo dashboard
+
+For the live presentation there is a Streamlit dashboard that drives the same agents and
+lets the audience watch them work, with real **Approve / Reject** buttons at each
+human-in-the-loop checkpoint, KPI cards, and a supplier graph that highlights the
+disruption:
+
+```bash
+cd mvp
+pip install -r app_requirements.txt
+streamlit run streamlit_app.py
 ```
 
 ## How it maps to the grading rubric

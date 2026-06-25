@@ -19,10 +19,29 @@ export ANTHROPIC_API_KEY=...
 SENTINEL_LLM=claude python3 run_demo.py
 ```
 
+## Interactive demo dashboard (Streamlit)
+
+A visual, click-through version of the same run for the live presentation. It drives the
+**real** orchestrator and sub-agents, then replays exactly what they did step by step,
+with live human-in-the-loop **Approve / Reject** buttons, KPI cards, and a supplier
+dependency graph that highlights the disruption.
+
+```bash
+pip install -r app_requirements.txt
+streamlit run streamlit_app.py
+```
+
+It is offline and deterministic by default; switch the reasoning backend to Claude in the
+sidebar if `ANTHROPIC_API_KEY` is set. The dashboard reads the same `src/` code via
+`sentinel_runtime.py` (no agent logic is duplicated).
+
 ## Code map
 
 ```
 run_demo.py            entry point + scenario trigger + CLI flags
+streamlit_app.py       interactive demo dashboard (UI)
+sentinel_runtime.py    bridge: runs the real agents, captures the trace for the UI
+app_requirements.txt   dashboard dependencies (streamlit)
 src/
   orchestrator.py      Supervisor agent: routes to sub-agents, writes briefing
   agents/

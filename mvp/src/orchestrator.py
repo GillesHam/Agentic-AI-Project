@@ -66,14 +66,15 @@ class Orchestrator:
         self._briefing()
         return self.board
 
-    def _briefing(self):
-        T.banner("EXECUTIVE BRIEFING (Orchestrator synthesis)")
+    def briefing_contexts(self):
+        """Build the per-part briefing context dicts (also reused by the UI)."""
         impacted = self.board.recall("impacted_parts", [])
         eta = self.board.recall("eta_findings", {})
+        ctxs = []
         for item in impacted:
             part = item["part"]
             inv_runway = 2.0  # already surfaced by MitigationAgent for the demo part
-            ctx = {
+            ctxs.append({
                 "part": part, "part_name": item["name"],
                 "risk_band": "CRITICAL", "risk_score": 97,
                 "root_cause": f"disrupted Tier-2 dependency via {item['disrupted_via']}",
@@ -83,7 +84,12 @@ class Orchestrator:
                 "exposure_cost": max(0, eta[part]["predicted_delay_days"] - int(inv_runway)) * 180_000,
                 "plan": self.board.plan,
                 "approvals": self.board.approvals_required,
-            }
+            })
+        return ctxs
+
+    def _briefing(self):
+        T.banner("EXECUTIVE BRIEFING (Orchestrator synthesis)")
+        for ctx in self.briefing_contexts():
             print(llm.draft_briefing(ctx))
             print()
         T.step("OBSERVE", "Run complete. Full trace above is the audit log "
