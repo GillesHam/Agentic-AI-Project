@@ -43,9 +43,10 @@ def _init():
 _init()
 
 
-def start_run(backend, model):
+def start_run(scenario, backend, model, inv_tweaks=None):
     with st.spinner("Running the agentic pipeline..."):
-        st.session_state.run = rt.run_sentinel(backend=backend, model=model)
+        st.session_state.run = rt.run_sentinel(
+            scenario=scenario, backend=backend, model=model, inv_tweaks=inv_tweaks)
     st.session_state.cursor = 0
     st.session_state.halted = False
     st.session_state.auto = False
@@ -79,6 +80,22 @@ with st.sidebar:
     speed = st.slider("Auto-play speed (seconds per step)", 0.1, 2.0, 0.5, 0.1)
 
     st.divider()
+    st.markdown("### Tweak the situation")
+    st.caption("Change our stock position, then run the Taiwan shock to watch the risk "
+               "score and money-at-risk react live.")
+    _base_inv = rt.load("inventory")["items"][rt.PART]
+    on_hand = st.slider("On-hand units of the critical part", 280, 1200,
+                        int(_base_inv["on_hand_units"]), 10)
+    daily = st.slider("Daily consumption (units/day)", 20, 150,
+                      int(_base_inv["daily_consumption_units"]), 5)
+    _usable = max(0, on_hand - _base_inv["safety_stock_units"])
+    st.caption(f"Runway before safety stock: about {_usable / daily:.1f} days")
+    if st.button("▶ Run Taiwan shock with these levels", use_container_width=True):
+        start_run("taiwan", backend, model,
+                  inv_tweaks={"on_hand_units": on_hand, "daily_consumption_units": daily})
+        st.rerun()
+
+    st.divider()
     if st.button("↺ Reset demo", use_container_width=True):
         reset_run()
         st.rerun()
@@ -110,20 +127,35 @@ st.markdown(
     unsafe_allow_html=True)
 
 run = st.session_state.run
+active_scenario = run["scenario"] if run else None
+is_custom = bool(run and run.get("inv_tweaks"))
 
-# scenario card + run button when nothing has run yet
+# --- scenario bar (always visible, so you can switch situations live) --------------
+st.markdown("##### Pick a situation, the same agents react differently")
+scols = st.columns(len(rt.SCENARIO_ORDER))
+for col, key in zip(scols, rt.SCENARIO_ORDER):
+    sc = rt.SCENARIOS[key]
+    highlight = (key == active_scenario and not is_custom)
+    if col.button(f"{sc['emoji']} {sc['label']}",
+                  type="primary" if highlight else "secondary",
+                  use_container_width=True):
+        start_run(key, backend, model)
+        st.rerun()
+
 if run is None:
-    st.info("**Scenario:** A typhoon suspends Kaohsiung port and a power-grid fault halts "
-            "the SiliconPath chip fab in Taiwan. None of Titan's Tier-1 orders look late "
-            "yet. Press the button to let the Sentinel investigate.")
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        if st.button("🚀 Run the Sentinel", type="primary", use_container_width=True):
-            start_run(backend, model)
-            st.rerun()
-    with c2:
-        st.caption(f"Trigger: {rt.DEFAULT_TRIGGER}")
+    st.info("**Choose a situation above to begin.** Each one feeds the agents a different "
+            "set of real-world signals. Watch how the Sentinel investigates and decides, "
+            "sometimes acting, sometimes correctly standing down.")
+    with st.expander("What each situation shows"):
+        for key in rt.SCENARIO_ORDER:
+            sc = rt.SCENARIOS[key]
+            st.markdown(f"**{sc['emoji']} {sc['label']}** — {sc['blurb']} "
+                        f"_Expected: {sc['expected']}_")
     st.stop()
+
+_sc = rt.SCENARIOS[active_scenario]
+label = "Custom stock levels + Taiwan shock" if is_custom else f"{_sc['emoji']} {_sc['label']}"
+st.caption(f"**Running:** {label}  ·  {_sc['blurb']}  ·  _Trigger: {run['trigger']}_")
 
 # =============================================================================
 # A run exists: replay it
@@ -146,6 +178,12 @@ def done_through(agent):
     return agent in ends and cursor > ends[agent]
 
 
+def kpi_ready(agent):
+    # a KPI value is shown only once its agent has finished AND we actually have metrics
+    # (the "no action" scenarios produce no metrics, so the cards stay blank)
+    return bool(metrics) and done_through(agent)
+
+
 next_ev = events[cursor] if cursor < total else None
 paused_on_hitl = bool(next_ev and next_ev["type"] == "hitl") and not st.session_state.halted
 finished = cursor >= total or st.session_state.halted
@@ -153,28 +191,31 @@ finished = cursor >= total or st.session_state.halted
 # --- KPI row (values reveal as the relevant agent completes) -----------------------
 k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Risk level",
-          metrics.get("risk_band", "—") if done_through("MitigationAgent") else "—",
-          f"{metrics.get('risk_score','')}/100" if done_through("MitigationAgent") else None)
+          metrics["risk_band"] if kpi_ready("MitigationAgent") else "—",
+          f"{metrics['risk_score']}/100" if kpi_ready("MitigationAgent") else None)
 k2.metric("Money at risk",
-          f"${metrics['exposure_cost']:,.0f}" if done_through("MitigationAgent") else "—",
-          f"{int(metrics.get('exposure_days',0))} days exposed" if done_through("MitigationAgent") else None,
+          f"${metrics['exposure_cost']:,.0f}" if kpi_ready("MitigationAgent") else "—",
+          f"{int(metrics['exposure_days'])} days exposed" if kpi_ready("MitigationAgent") else None,
           delta_color="inverse")
 k3.metric("Inventory runway",
-          f"{metrics['runway_days']:.0f} days" if done_through("SupplierGraphAgent") else "—")
+          f"{metrics['runway_days']:.1f} days" if kpi_ready("SupplierGraphAgent") else "—")
 k4.metric("Predicted delay",
-          f"+{metrics['delay_days']} days" if done_through("ETALogisticsAgent") else "—",
-          metrics.get("predicted_eta") if done_through("ETALogisticsAgent") else None,
+          f"+{metrics['delay_days']} days" if kpi_ready("ETALogisticsAgent") else "—",
+          metrics["predicted_eta"] if kpi_ready("ETALogisticsAgent") else None,
           delta_color="off")
 k5.metric("Mitigation cost",
-          f"${metrics['po_spend']:,.0f}" if done_through("MitigationAgent") else "—",
-          f"via {metrics.get('chosen_alt_name','')}" if done_through("MitigationAgent") else None,
+          f"${metrics['po_spend']:,.0f}" if kpi_ready("MitigationAgent") else "—",
+          f"via {metrics['chosen_alt_name']}" if kpi_ready("MitigationAgent") else None,
           delta_color="off")
 
 # --- agent pipeline ----------------------------------------------------------------
 st.markdown("##### Agent pipeline")
 pcols = st.columns(len(rt.AGENT_ORDER))
 for col, name in zip(pcols, rt.AGENT_ORDER):
-    if name not in starts or cursor <= starts[name]:
+    if name not in starts:
+        # agent never ran (an earlier agent ended the run): waiting, then skipped
+        icon, state, bg = ("⏭", "not needed", "#f1f5f9") if finished else ("⚪", "waiting", "#f1f5f9")
+    elif cursor <= starts[name]:
         icon, state, bg = "⚪", "waiting", "#f1f5f9"
     elif done_through(name):
         icon, state, bg = "✅", "done", "#dcfce7"
@@ -210,7 +251,7 @@ if runpause_clicked:
     st.session_state.cursor = c
     st.rerun()
 if again_clicked:
-    start_run(backend, model)
+    start_run(active_scenario, backend, model, run.get("inv_tweaks"))
     st.rerun()
 
 # --- human-in-the-loop gate --------------------------------------------------------
@@ -308,8 +349,21 @@ if st.session_state.halted:
              "and the live line is untouched. This is the guardrail working, nothing "
              "irreversible happens without a human.")
 elif finished:
-    st.success("✅ Run complete. The full trace above is the audit log, every decision is "
-               "explainable and traceable (LangSmith / Langfuse style).")
+    conclusion = run["conclusion"]
+    if conclusion == "mitigated":
+        st.success("✅ Run complete. The Sentinel caught a CRITICAL risk weeks early and "
+                   "produced a costed plan, pausing for human sign-off on the expensive "
+                   "moves. The full trace is the audit log (LangSmith / Langfuse style).")
+    elif conclusion == "monitor":
+        st.info("🟡 Run complete. The risk was real but within tolerance, so the agent "
+                "recommends monitoring only, no costly action and no false alarm.")
+    elif conclusion == "not_relevant":
+        st.info("🔎 Run complete. The agent perceived the disruption, traced it through the "
+                "supplier graph, and correctly concluded it touches none of our critical "
+                "parts. No action taken, no wasted spend.")
+    elif conclusion == "no_risk":
+        st.info("🟢 Run complete. No high-severity signals, so the agent stood down. Knowing "
+                "when NOT to act is part of good autonomy.")
 
 # --- auto-play engine: advance one step per rerun while enabled --------------------
 if st.session_state.auto and not paused_on_hitl and not finished:

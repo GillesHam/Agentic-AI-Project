@@ -26,6 +26,12 @@ A visual, click-through version of the same run for the live presentation. It dr
 with live human-in-the-loop **Approve / Reject** buttons, KPI cards, and a supplier
 dependency graph that highlights the disruption.
 
+It ships with four switchable **scenarios** that make the same agents behave differently:
+a Taiwan chip shock (full mitigation), the same shock with almost no stock (bigger
+exposure), a distant port strike (perceived but not relevant, no action), and a calm scan
+(stands down). There is also a "tweak the stock levels" panel so you can move the sliders
+and watch the risk score react live.
+
 ```bash
 pip install -r app_requirements.txt
 streamlit run streamlit_app.py

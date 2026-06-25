@@ -67,21 +67,31 @@ class Orchestrator:
         return self.board
 
     def briefing_contexts(self):
-        """Build the per-part briefing context dicts (also reused by the UI)."""
+        """Build the per-part briefing context dicts (also reused by the UI).
+
+        Numbers are derived from the same tools the agents used, so the briefing stays
+        correct across scenarios (thin/thick inventory, different disruptions)."""
+        import tools
+        from agents.mitigation_agent import LINE_STOPPAGE_COST_PER_DAY
         impacted = self.board.recall("impacted_parts", [])
         eta = self.board.recall("eta_findings", {})
         ctxs = []
         for item in impacted:
             part = item["part"]
-            inv_runway = 2.0  # already surfaced by MitigationAgent for the demo part
+            runway = tools.get("inventory_system")(part=part)["runway_days_to_safety_stock"]
+            delay = eta[part]["predicted_delay_days"]
+            score = tools.get("risk_scorer")(
+                part=part, runway_days=runway, predicted_delay_days=delay,
+                single_source=item["single_source_upstream"],
+                line_stoppage_cost_per_day=LINE_STOPPAGE_COST_PER_DAY)
             ctxs.append({
                 "part": part, "part_name": item["name"],
-                "risk_band": "CRITICAL", "risk_score": 97,
+                "risk_band": score["risk_band"], "risk_score": score["risk_score"],
                 "root_cause": f"disrupted Tier-2 dependency via {item['disrupted_via']}",
-                "runway_days": inv_runway,
-                "delay_days": eta[part]["predicted_delay_days"],
-                "exposure_days": max(0, eta[part]["predicted_delay_days"] - int(inv_runway)),
-                "exposure_cost": max(0, eta[part]["predicted_delay_days"] - int(inv_runway)) * 180_000,
+                "runway_days": runway,
+                "delay_days": delay,
+                "exposure_days": score["exposure_days"],
+                "exposure_cost": score["estimated_exposure_cost"],
                 "plan": self.board.plan,
                 "approvals": self.board.approvals_required,
             })

@@ -20,6 +20,7 @@ import tools                        # noqa: E402  (registry)
 import tools.data_access            # noqa: E402,F401  (registers read tools)
 import tools.analytics              # noqa: E402,F401  (registers execute tools)
 import tools.actions                # noqa: E402,F401  (registers write tools)
+import tools._data as _dm           # noqa: E402  (loader + scenario overrides)
 import llm                          # noqa: E402
 from tools._data import load        # noqa: E402
 from orchestrator import Orchestrator, OBJECTIVE  # noqa: E402
@@ -34,6 +35,85 @@ DEFAULT_TRIGGER = (
     "(EVT-7001 typhoon @ Kaohsiung, EVT-7002 SiliconPath fab halt)"
 )
 
+# =====================================================================================
+# Scenarios. Each is a small transform over the base JSON fixtures (events + inventory),
+# so the SAME agents react differently. They demonstrate distinct agentic behaviours:
+# full mitigation, restraint when irrelevant, and standing down when there is no risk.
+# =====================================================================================
+PART = "SVC-2200"
+
+
+def _set_sev(events, overrides):
+    for e in events["events"]:
+        if e["event_id"] in overrides:
+            e["severity"] = overrides[e["event_id"]]
+    return events
+
+
+def _set_inv(inv, part, **fields):
+    inv["items"][part].update(fields)
+    return inv
+
+
+SCENARIOS = {
+    "taiwan": {
+        "emoji": "🌀", "label": "Taiwan chip shock",
+        "blurb": "A typhoon shuts Kaohsiung port and a grid fault halts the SiliconPath "
+                 "chip fab. No Tier-1 order looks late yet.",
+        "expected": "CRITICAL, switches to a safe alternate, asks a human to approve.",
+        "trigger": DEFAULT_TRIGGER,
+        "events": lambda e: e,
+        "inventory": lambda i: i,
+    },
+    "lowstock": {
+        "emoji": "🔥", "label": "Same shock, almost no stock",
+        "blurb": "The same Taiwan disruption, but we are down to a fraction of a day of "
+                 "buffer stock on the critical controller.",
+        "expected": "CRITICAL with a much larger amount of money at risk.",
+        "trigger": "Risk webhook (Taiwan) + ERP low-stock alert on " + PART,
+        "events": lambda e: e,
+        "inventory": lambda i: _set_inv(i, PART, on_hand_units=312),  # runway ~0.2 days
+    },
+    "portstrike": {
+        "emoji": "⚓", "label": "Distant port strike",
+        "blurb": "A labour strike halts the Port of Los Angeles. The Taiwan signals are "
+                 "quiet. Does it affect any of our critical parts?",
+        "expected": "Perceived, but it touches no critical part, so no action.",
+        "trigger": "External risk webhook (EVT-8001 Port of Los Angeles strike)",
+        "events": lambda e: _add_la_strike(_set_sev(e, {"EVT-7001": "low", "EVT-7002": "low"})),
+        "inventory": lambda i: i,
+    },
+    "allclear": {
+        "emoji": "✅", "label": "Calm seas",
+        "blurb": "A routine scan with only minor, low-severity chatter in the feed.",
+        "expected": "No high-severity risk, the agent stands down. No false alarm.",
+        "trigger": "Scheduled 15-min control-tower scan (no high-severity signals)",
+        "events": lambda e: _set_sev(e, {"EVT-7001": "low", "EVT-7002": "low"}),
+        "inventory": lambda i: i,
+    },
+}
+SCENARIO_ORDER = ["taiwan", "lowstock", "portstrike", "allclear"]
+
+
+def _add_la_strike(events):
+    events["events"].append({
+        "event_id": "EVT-8001", "type": "logistics", "severity": "high",
+        "headline": "Labour strike halts container operations at the Port of Los Angeles",
+        "location": "PORT-LOSANGELES", "region": "NA",
+        "published": "2026-06-18T07:30:00Z",
+    })
+    return events
+
+
+def _scenario_overrides(scenario_key, inv_tweaks=None):
+    """Build the {dataset_name: data} overrides for a scenario (+ optional UI tweaks)."""
+    sc = SCENARIOS[scenario_key]
+    events = sc["events"](_dm.read_file("external_events"))
+    inv = sc["inventory"](_dm.read_file("inventory"))
+    if inv_tweaks:
+        _set_inv(inv, PART, **{k: v for k, v in inv_tweaks.items() if v is not None})
+    return {"external_events": events, "inventory": inv}
+
 AGENT_CLASSES = [Orchestrator, RiskIntelAgent, SupplierGraphAgent,
                  ETALogisticsAgent, MitigationAgent]
 
@@ -47,13 +127,16 @@ AGENT_LABELS = {
 AGENT_ORDER = ["RiskIntelAgent", "SupplierGraphAgent", "ETALogisticsAgent", "MitigationAgent"]
 
 
-def run_sentinel(backend="sim", model="claude-opus-4-8", trigger=DEFAULT_TRIGGER):
-    """Run the full agentic pipeline once and capture everything for the UI.
+def run_sentinel(scenario="taiwan", backend="sim", model="claude-opus-4-8",
+                 inv_tweaks=None, trigger=None):
+    """Run the full agentic pipeline once for a scenario and capture everything for the UI.
 
-    Returns a dict: events (structured trace), objective, trigger, plan,
-    approvals, briefings (list of strings), metrics (dict), affected, impacted,
-    chosen_alt, backend.
+    Returns a dict: events (structured trace), scenario, objective, trigger, plan,
+    approvals, briefings, metrics, affected, impacted, chosen_alt, conclusion, backend.
     """
+    sc = SCENARIOS.get(scenario, SCENARIOS["taiwan"])
+    trigger = trigger or sc["trigger"]
+
     # configure the reasoning backend (llm.BACKEND is read live by draft_briefing)
     llm.BACKEND = backend
     llm.MODEL = model
@@ -61,29 +144,47 @@ def run_sentinel(backend="sim", model="claude-opus-4-8", trigger=DEFAULT_TRIGGER
     events = []
     tracer.SINK = events
     tracer.SLOW = False  # the UI does its own pacing on replay
+    _dm.set_overrides(_scenario_overrides(scenario, inv_tweaks))
     try:
         orch = Orchestrator()
         orch.run(trigger)
         briefings = [llm.draft_briefing(c) for c in orch.briefing_contexts()]
+        metrics = _derive_metrics(orch.board)
     finally:
-        tracer.SINK = None  # never leave the global sink attached
+        tracer.SINK = None       # never leave the global sink attached
+        _dm.clear_overrides()    # restore the on-disk fixtures
 
     board = orch.board
-    metrics = _derive_metrics(board)
+    affected = board.recall("affected_entities", [])
+    impacted = board.recall("impacted_parts", [])
 
     return {
         "events": events,
+        "scenario": scenario,
+        "inv_tweaks": inv_tweaks,
         "objective": OBJECTIVE,
         "trigger": trigger,
         "plan": list(board.plan),
         "approvals": list(board.approvals_required),
         "briefings": briefings,
         "metrics": metrics,
-        "affected": board.recall("affected_entities", []),
-        "impacted": board.recall("impacted_parts", []),
+        "affected": affected,
+        "impacted": impacted,
         "chosen_alt": metrics.get("chosen_alt"),
+        "conclusion": _conclusion(affected, impacted, board.plan),
         "backend": backend,
     }
+
+
+def _conclusion(affected, impacted, plan):
+    """Classify how the run ended, so the UI can explain the agent's judgement."""
+    if not affected:
+        return "no_risk"          # nothing high-severity, stood down
+    if not impacted:
+        return "not_relevant"     # perceived a disruption but it hits no critical part
+    if not plan:
+        return "monitor"          # impacted but risk acceptable, monitor only
+    return "mitigated"            # full mitigation plan produced
 
 
 def _derive_metrics(board):
