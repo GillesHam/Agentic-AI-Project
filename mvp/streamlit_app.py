@@ -8,8 +8,7 @@ Run from the mvp/ folder:
     pip install -r app_requirements.txt
     streamlit run streamlit_app.py
 
-Everything is offline and deterministic by default (no API key needed). Switch the
-reasoning backend to Claude in the sidebar if ANTHROPIC_API_KEY is set.
+Runs fully offline and deterministically, no API key needed.
 """
 
 import time
@@ -43,10 +42,9 @@ def _init():
 _init()
 
 
-def start_run(scenario, backend, model, inv_tweaks=None):
+def start_run(scenario, inv_tweaks=None):
     with st.spinner("Running the agentic pipeline..."):
-        st.session_state.run = rt.run_sentinel(
-            scenario=scenario, backend=backend, model=model, inv_tweaks=inv_tweaks)
+        st.session_state.run = rt.run_sentinel(scenario=scenario, inv_tweaks=inv_tweaks)
     st.session_state.cursor = 0
     st.session_state.halted = False
     st.session_state.auto = False
@@ -65,18 +63,6 @@ with st.sidebar:
     st.caption("Agentic AI for IT, IE University. An always-on AI teammate that protects "
                "Titan's production lines from supply shocks.")
 
-    st.markdown("### Reasoning backend")
-    backend_label = st.radio(
-        "How the agents reason / write the briefing",
-        ["Offline simulation (recommended)", "Claude (needs ANTHROPIC_API_KEY)"],
-        label_visibility="collapsed")
-    backend = "sim" if backend_label.startswith("Offline") else "claude"
-    model = "claude-opus-4-8"
-    if backend == "claude":
-        model = st.text_input("Model id", value="claude-opus-4-8")
-        st.caption("Falls back to the offline template if the API call fails. The agent "
-                   "logic itself is identical in both modes.")
-
     speed = st.slider("Auto-play speed (seconds per step)", 0.1, 2.0, 0.5, 0.1)
 
     st.divider()
@@ -90,8 +76,8 @@ with st.sidebar:
                       int(_base_inv["daily_consumption_units"]), 5)
     _usable = max(0, on_hand - _base_inv["safety_stock_units"])
     st.caption(f"Runway before safety stock: about {_usable / daily:.1f} days")
-    if st.button("▶ Run Taiwan shock with these levels", use_container_width=True):
-        start_run("taiwan", backend, model,
+    if st.button("Run Taiwan shock with these levels", use_container_width=True):
+        start_run("taiwan",
                   inv_tweaks={"on_hand_units": on_hand, "daily_consumption_units": daily})
         st.rerun()
 
@@ -139,7 +125,7 @@ for col, key in zip(scols, rt.SCENARIO_ORDER):
     if col.button(f"{sc['emoji']} {sc['label']}",
                   type="primary" if highlight else "secondary",
                   use_container_width=True):
-        start_run(key, backend, model)
+        start_run(key)
         st.rerun()
 
 if run is None:
@@ -149,7 +135,7 @@ if run is None:
     with st.expander("What each situation shows"):
         for key in rt.SCENARIO_ORDER:
             sc = rt.SCENARIOS[key]
-            st.markdown(f"**{sc['emoji']} {sc['label']}** — {sc['blurb']} "
+            st.markdown(f"**{sc['emoji']} {sc['label']}**: {sc['blurb']} "
                         f"_Expected: {sc['expected']}_")
     st.stop()
 
@@ -191,20 +177,20 @@ finished = cursor >= total or st.session_state.halted
 # --- KPI row (values reveal as the relevant agent completes) -----------------------
 k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Risk level",
-          metrics["risk_band"] if kpi_ready("MitigationAgent") else "—",
+          metrics["risk_band"] if kpi_ready("MitigationAgent") else "not yet",
           f"{metrics['risk_score']}/100" if kpi_ready("MitigationAgent") else None)
 k2.metric("Money at risk",
-          f"${metrics['exposure_cost']:,.0f}" if kpi_ready("MitigationAgent") else "—",
+          f"${metrics['exposure_cost']:,.0f}" if kpi_ready("MitigationAgent") else "not yet",
           f"{int(metrics['exposure_days'])} days exposed" if kpi_ready("MitigationAgent") else None,
           delta_color="inverse")
 k3.metric("Inventory runway",
-          f"{metrics['runway_days']:.1f} days" if kpi_ready("SupplierGraphAgent") else "—")
+          f"{metrics['runway_days']:.1f} days" if kpi_ready("SupplierGraphAgent") else "not yet")
 k4.metric("Predicted delay",
-          f"+{metrics['delay_days']} days" if kpi_ready("ETALogisticsAgent") else "—",
+          f"+{metrics['delay_days']} days" if kpi_ready("ETALogisticsAgent") else "not yet",
           metrics["predicted_eta"] if kpi_ready("ETALogisticsAgent") else None,
           delta_color="off")
 k5.metric("Mitigation cost",
-          f"${metrics['po_spend']:,.0f}" if kpi_ready("MitigationAgent") else "—",
+          f"${metrics['po_spend']:,.0f}" if kpi_ready("MitigationAgent") else "not yet",
           f"via {metrics['chosen_alt_name']}" if kpi_ready("MitigationAgent") else None,
           delta_color="off")
 
@@ -251,13 +237,13 @@ if runpause_clicked:
     st.session_state.cursor = c
     st.rerun()
 if again_clicked:
-    start_run(active_scenario, backend, model, run.get("inv_tweaks"))
+    start_run(active_scenario, run.get("inv_tweaks"))
     st.rerun()
 
 # --- human-in-the-loop gate --------------------------------------------------------
 if paused_on_hitl:
-    st.warning(f"🔒 **Human-in-the-loop checkpoint** — the agent is escalating a costly / "
-               f"irreversible action and needs your sign-off:\n\n> {next_ev['message']}")
+    st.warning(f"🔒 **Human-in-the-loop checkpoint**: the agent is escalating a costly or "
+               f"irreversible action and needs your sign-off.\n\n> {next_ev['message']}")
     a1, a2, _ = st.columns([1, 1, 4])
     if a1.button("✅ Approve", type="primary", use_container_width=True):
         st.session_state.cursor = cursor + 1   # reveal the escalation and continue
@@ -340,7 +326,6 @@ if done_through("MitigationAgent"):
                 st.markdown(f"- 🔒 {a}")
     with o2:
         st.markdown("##### Executive briefing")
-        st.caption(f"Reasoning backend: {run['backend']}")
         for b in run["briefings"]:
             st.code(b, language="text")
 

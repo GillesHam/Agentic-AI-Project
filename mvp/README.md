@@ -37,9 +37,11 @@ pip install -r app_requirements.txt
 streamlit run streamlit_app.py
 ```
 
-It is offline and deterministic by default; switch the reasoning backend to Claude in the
-sidebar if `ANTHROPIC_API_KEY` is set. The dashboard reads the same `src/` code via
-`sentinel_runtime.py` (no agent logic is duplicated).
+The dashboard always runs the offline simulation backend (no API key needed, fully
+deterministic for a live presentation). It reads the same `src/` code via
+`sentinel_runtime.py` (no agent logic is duplicated). The optional Claude backend
+described above for `run_demo.py` is still available at the `sentinel_runtime.run_sentinel()`
+level for anyone scripting against it directly, it is just not exposed as a UI control.
 
 ## Code map
 
