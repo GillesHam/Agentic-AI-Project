@@ -150,113 +150,184 @@ No dependencies are needed for the default mode. To change the scenario, edit th
 | Criterion (pts) | How we earn it |
 |---|---|
 | Problem Framing, Agent Goals & Prompt (15) | Slides 1-2; measurable goal + metrics; prompts in Part C |
-| Agentic System Architecture (10) | Slide 5; supervisor pattern + trade-offs |
-| Tools, Actions & Feasibility (15) | Slide 6 + Part C; decide-vs-execute split, realistic tools |
-| **Agentic Thinking & Autonomy (25)** | **Slide 7 live demo**; perception→reasoning→action→**adaptation** |
+| Agentic System Architecture (10) | Slides 3-4; supervisor pattern + trade-offs |
+| Tools, Actions & Feasibility (15) | Slide 5 + Part C; decide-vs-execute split, realistic tools |
+| **Agentic Thinking & Autonomy (25)** | Slide 6 + **slide 7 live demo**; perception→reasoning→action→**adaptation** |
 | Risk Awareness & Mitigation (15) | Slide 8; HITL policy, spend caps, injection handling, tracing |
-| Clarity, Presentation & Creativity (20) | The deck + the live, narrated agent loop |
+| Clarity, Presentation & Creativity (20) | The deck + the live, narrated agent loop (slide 9-10) |
 
 ---
 
-# PART B - Presentation script (about 15 minutes, board audience)
+# PART B - Presentation script (about 15 minutes)
 
-> The deck is a business pitch to Titan's board. Keep the language plain, lead with money
-> and risk, and let the live example (slide 7) carry the weight. Times are targets. Assign
-> one speaker per block. No em-dashes anywhere, on the slides or in speech.
+> This is the script for the final deck, `presentation/Supply_Chain_Sentinel_Final.pptx`
+> (10 content slides, plus a title slide and a thank-you slide). It is a design-focused
+> pitch to Titan's leadership: technical, but plain-spoken. Keep the language warm and
+> clear, and let the live example carry the weight. Times are targets. No em-dashes
+> anywhere, on the slides or in speech.
+>
+> **The four parts (one speaker each):**
+> - **Lorenz Rösgen, the opening and the design** (title, slides 1 to 3)
+> - **Marti Solà Puig, the reasoning and the tools** (slides 4 to 6)
+> - **Gilles Hamers, the live demo only** (slide 7), running the deployed app at
+>   **https://agentic-ai-sentinel.streamlit.app/**
+> - **Dan Tigu, safety, build and the close** (slides 8 to 10, thank you)
+>
+> (Names map to roles, not to who built what. Swap them to suit the group. Whoever is not
+> speaking should advance slides and be ready to field questions.)
 
-**[Slide 0, Title] (0:00 to 0:30), Speaker 1**
+### Part 1, Lorenz Rösgen, the opening and the design
+
+**[Title] (0:00 to 0:25)**
 > "Good morning. Last quarter, Titan lost 14 million dollars to production lines that
-> stopped because a part did not arrive, and we found out too late. We are Team [X], and we
-> are proposing an AI teammate we call Supply Chain Sentinel. It protects our production
-> lines by catching supply problems weeks earlier than we can today."
+> stopped because a part did not arrive, and we found out too late. We are Lorenz, Marti,
+> Gilles and Dan, and we are proposing an agentic AI teammate we call Supply Chain Sentinel.
+> It keeps our production lines running by catching supply problems weeks earlier than we
+> can today."
 
-**[Slide 1, Why our lines keep stopping] (0:30 to 2:00), Speaker 1**
-> "Our output is down 9% this year and we keep missing customer deadlines. The cause sits
-> in our supply chain. On the left is what we see: suppliers deliver late 28% more often,
-> missing parts cost us 14 million dollars last quarter, and emergency shipping is up 52%.
-> On the right is why it keeps happening. We can see our direct suppliers, but not the
-> companies that supply them. Our shipping information is scattered across emails and
-> spreadsheets. And we still trust the original promised dates even when they are already
-> wrong. In short, we react too late because our information is scattered and our decisions
-> are manual."
+**[Slide 1, What the agent is for, and why it matters] (0:25 to 2:00)**
+> "Here is what the Sentinel is for: it keeps every critical part available at every plant.
+> It spots a supply risk early, before it can stop a line, then arranges the most affordable
+> fix, while always asking a person to approve anything expensive or hard to undo. Why does
+> this matter? When a line stops it is painful: stoppages cost us 14 million dollars last
+> quarter, and a single critical machining line loses around 180,000 dollars for every day
+> it sits idle. By noticing trouble two suppliers deep and about a week sooner, we can
+> replace costly last-minute air freight, which is already up by more than half, with calm,
+> planned orders that also protect our delivery promises. We will know it is working when
+> the time from first warning to a clear decision falls from days to minutes, when we catch
+> at least seven in ten disruptions before a supplier is even visibly late, and when
+> rushed-freight spending drops by about a third."
 
-**[Slide 2, The opportunity] (2:00 to 3:00), Speaker 1**
-> "Today our teams chase this by hand, one problem at a time, and usually too late. We need
-> something that watches every warning signal day and night and acts before a line stops.
-> Our goal is simple: keep every critical part in stock by spotting risk early and fixing
-> it at the lowest cost, with our managers approving the important decisions. We will know
-> it works when warnings arrive in minutes instead of days, when we catch most problems
-> before a delivery is even late, and when emergency shipping falls by about a third."
+**[Slide 2, What the agent observes and remembers] (2:00 to 3:15)**
+> "For the agent to make good decisions, it needs the right inputs and a memory. It wakes up
+> in three ways: a risk alert that arrives on its own, a routine check every fifteen
+> minutes, or a planner simply asking a question. It reads outside risk signals, shipping
+> notices, supplier emails, carrier spreadsheets, live inventory and open orders, the
+> supplier map, and the parts list. Some of this moves constantly, like shipment status and
+> stock levels; some stays steady, like the supplier map and our approval rules. And it
+> draws on four kinds of memory: the shared notes for the case in hand, reference knowledge
+> like supplier records and contracts, past experience of what fixes worked, and general
+> know-how. That memory is what lets it reason with context instead of starting from scratch
+> every time."
 
-**[Slide 3, A 24/7 guardian] (3:00 to 3:45), Speaker 2**
-> "So we propose a digital assistant that never sleeps and does four things. It watches the
-> news, weather, ports and supplier updates. It connects the dots, mapping which of our
-> products depend on a troubled supplier, even two or three steps up the chain. It predicts
-> when parts will really arrive and how much money is at risk. And it acts, preparing the
-> fix and asking a manager to approve the costly moves. Today those four jobs are split
-> across teams who do not share information. This puts them in one place."
+**[Slide 3, One supervisor guiding four specialists] (3:15 to 4:40)**
+> "Here is how it is built. At the top is a supervisor. It owns the goal, decides who works
+> on what, and writes the final briefing, but it never touches the data tools itself.
+> Underneath are four specialists, each a small reasoning agent with its own tools and
+> memory: Risk Intelligence watches the outside world, Supplier Mapping traces the supply
+> chain, Arrival Forecast predicts real arrival dates, and Mitigation scores, plans and
+> acts. They share notes as they go, and each one runs its own reason-and-act loop. Below
+> them are the tools they can call, with the risky actions starred, and at the bottom are
+> the real systems we would connect to, from our planning system to factory-floor controls
+> and news and weather feeds. Marti will now explain why we chose this shape."
 
-**[Slide 4, It fixes our exact problems] (3:45 to 4:30), Speaker 2**
-> "Every problem from the first slide has a fix here. We cannot see past our direct
-> suppliers, so it maps the full chain. Our promised dates are unreliable, so it predicts
-> the real arrival date and the cost. We drown in alerts, so it ranks them. And our
-> reactions are slow and expensive, so it prepares the lowest-cost fix in minutes. One
-> assistant covers the whole challenge."
+### Part 2, Marti Solà Puig, the reasoning and the tools
 
-**[Slide 5, How it works] (4:30 to 5:45), Speaker 2**
-> "In plain terms, think of it as a small team of four AI specialists led by a supervisor.
-> A Watcher spots disruptions in the outside world. A Mapper traces them to the parts at
-> risk. A Forecaster predicts arrival dates and cost. A Planner prepares the fix. The
-> supervisor decides which specialist to use and combines their findings into one
-> recommendation. Why a team and not one big system? Because a single all-in-one tool tries
-> to do too much and makes poor decisions, while four focused specialists are more accurate
-> and far easier to check and trust. It runs on proven, secure AI, hosted in our own cloud,
-> so our data stays protected."
+**[Slide 4, Why we chose a supervisor over the alternatives] (4:40 to 5:45)**
+> "Thank you. Why a supervisor guiding specialists, and not something simpler? One agent
+> holding every tool sounds easiest, but too many tools lead to poor choices, the context
+> grows unmanageable, and one agent cannot be expert at everything. Independent agents
+> talking peer to peer are hard to predict and to debug, with no clear accountability for a
+> three-million-dollar decision. A supervisor guiding specialists gives us clear
+> accountability, it is easy to follow and fix, work is shared among experts, and every step
+> can be audited. A deeper hierarchy is more than we need today, but it is a natural way to
+> grow later. The trade-off we accept is a few more moving parts and a little coordination,
+> which we keep in check with a light supervisor and tightly limited tools. A simple
+> automation script could never reason about a brand-new supplier chain, or sensibly decide
+> not to rush a shipment."
 
-**[Slide 6, Who stays in control] (5:45 to 6:45), Speaker 3**
-> "This is the part that matters most for trust. On its own, the Sentinel only does
-> low-risk, reversible things: it reads our systems, calculates the risk, drafts a
-> recommendation and sends alerts. For anything costly or hard to undo, a manager must
-> approve: committing real spend, paying for emergency freight, or changing a live
-> production schedule. Nothing irreversible ever happens without a person signing off, and
-> every step is recorded."
+**[Slide 5, The agent decides, the tools carry out the work] (5:45 to 6:55)**
+> "A short but important point on how it acts. Each tool is passive and does exactly one job
+> when asked. The agent is the one that decides which tool to use, and when. The read tools
+> let it perceive: the supplier map, the shipment tracker, inventory, and the risk feed. The
+> calculate tools let it work things out: an arrival predictor, and a risk scorer that turns
+> the picture into a priority score and a dollar figure. And the act tools change the real
+> world: creating a purchase order, expediting freight, rescheduling a line, or notifying
+> people. Notice the approval column. Reading and drafting are free, but committing money,
+> booking premium freight, or changing a live line always need a person. That split is the
+> heart of how we keep it safe."
 
-**[Slide 7, A real example, with the live demo] (6:45 to 10:30), Speaker 3 drives, Speaker 1 narrates**
-> "Let me show you a real example. (Start the live demo, or walk the slide.)
-> A typhoon and a power cut hit a chip factory in Taiwan. The Sentinel finds that a chip
-> from that factory is essential for the controllers on our Stuttgart line, a link we could
-> not see before. Our supplier's order looks on time, but it is actually stuck waiting for
-> that chip, about 19 days late. We have only 2 days of stock left, so the risk is around 3
-> million dollars. Here is the clever part: the Sentinel does not waste money rushing a
-> shipment that is already stuck. It switches to an approved European supplier instead. Then
-> it prepares the order and asks a manager to approve the 294,000 dollar spend and the
-> schedule change. The result is a 3 million dollar problem caught three weeks early, with a
-> plan ready to go."
+**[Slide 6, Perception, reasoning, action, learning] (6:55 to 8:10)**
+> "Putting that together, here is how the agent thinks, in four stages. It notices: the Risk
+> Intelligence specialist sifts the serious signals out of the daily noise, and the case
+> describes around twenty-two thousand unsorted alerts a day. It reasons: the Supplier
+> Mapping specialist follows the chain to the critical parts a troubled supplier feeds, and
+> treats a stuck part upstream as the real bottleneck, rather than trusting an optimistic
+> promised date. It acts: it drafts a backup order on its own, then, once a person signs
+> off, places the order, reschedules the line, tells the right people, and records
+> everything. And it learns: every run is remembered, and the approvals and edits planners
+> make become feedback that tunes its risk thresholds and supplier preferences. One honest
+> note: these agents do not improve by magic, they get better because we feed real human
+> feedback back in. Now Gilles will show you exactly this, running live."
 
-**[Slide 8, Keeping it safe] (10:30 to 11:30), Speaker 1**
-> "We know the board cares about risk, so let us be direct. People approve every costly or
-> irreversible action, and the AI never spends on its own. Spending limits are built in, and
-> orders can only go to suppliers we have already approved. It acts only on confirmed
-> information, never on rumours. It treats outside information as data, never as commands,
-> so it cannot be tricked. And every decision is recorded for compliance. The AI supports
-> our teams, it does not replace them."
+### Part 3, Gilles Hamers, the live demo
 
-**[Slide 9, What we gain] (11:30 to 12:15), Speaker 2**
-> "The before and after is clear. We move from finding problems after a line stops to
-> catching them three weeks earlier. From outdated promised dates to the real arrival date
-> and cost. From expensive emergency shipping to planned, lower-cost fixes. From thousands
-> of unsorted alerts to a short, prioritised list. Our target is to protect that 14 million
-> dollar quarterly loss, cut emergency shipping by about a third, and turn days of analysis
-> into minutes."
+**[Slide 7, A real example, a major risk caught early] (8:10 to 11:40)**
+> "Thanks Marti. Let me show you the Sentinel working on a real example. It is live, and you
+> can follow along at the address on the slide."
+>
+> *(Open https://agentic-ai-sentinel.streamlit.app/ and run the Taiwan chip shock scenario,
+> stepping through the trace.)*
+>
+> "The trigger: the risk feed reports a typhoon closing the port of Kaohsiung and a power
+> failure halting a chip factory in Taiwan. Watch the agents work. It flags both as serious,
+> then traces a hidden link: our critical Servo Motor Controller depends on that single
+> Taiwanese chip supplier, two tiers up, through our direct supplier Nexa, a connection we
+> could not see before. It then predicts the real impact: Nexa's order looks on time, but it
+> is actually stuck waiting for that chip, so the true delay is about nineteen days, while we
+> hold only two days of stock. The risk comes back critical, ninety-seven out of one
+> hundred, with roughly three million dollars at stake. Here is the moment to watch: the
+> agent first considers rushing Nexa's shipment, then rejects its own idea, because Nexa
+> cannot ship without the missing chip, and instead switches to an approved European supplier
+> that avoids Taiwan altogether. Finally it drafts the backup order on its own, and pauses,
+> right here, to ask a manager to approve the 294,300 dollar commitment and the line change.
+> I will approve it now. And that is the result: a three-million-dollar problem caught about
+> three weeks early, with a costed plan ready and a complete record of every step."
+>
+> *(If anything fails, fall back to the captured trace in `docs/05_demo_flow.md` or run it
+> locally with `cd mvp && python3 run_demo.py --slow`.)*
 
-**[Slide 10, Our recommendation] (12:15 to 13:15), Speaker 3**
-> "Our recommendation is a three-month pilot on the Stuttgart line. We measure two clear
-> numbers: hours of line stoppage and emergency shipping cost. If it works, we scale it to
-> our other plants and to related challenges like machine maintenance and quality. The ask
-> is simple: approve a one-line, one-quarter pilot. It is low cost, low risk and clearly
-> measurable. Thank you, and we welcome your questions."
+### Part 4, Dan Tigu, safety, build and the close
 
-**[Q&A] (13:15 to 15:00), all** (see Part D).
+**[Slide 8, What could go wrong, and how we prevent it] (11:40 to 12:40)**
+> "Thank you Gilles. You will rightly ask: what could go wrong, and how do we prevent it? We
+> designed for this from the start. A wrong or irreversible action is prevented because every
+> action begins as a draft, and anything costly or live needs a person to sign off. An
+> invented event is prevented because the risk specialist must point to a real signal in the
+> feed, it may never guess. Overspending is prevented by a firm limit that escalates large
+> commitments, and orders can only go to approved suppliers. One agent's mistake spreading is
+> contained by a light supervisor, tightly limited tools, and a full trace of every step. And
+> hidden instructions inside supplier messages are neutralised, because outside text is
+> always treated as information to read, never as commands to follow. In short, a person
+> stays in the loop for the decisions that matter, and everything easily reversible runs on
+> its own."
+
+**[Slide 9, How it is built and how it connects] (12:40 to 13:40)**
+> "A word on how it is built, because it has to be realistic. We chose proven, open
+> technology so the system stays flexible, secure and easy to inspect. The reasoning engine
+> is a large language model, strong at using tools and reasoning over many steps, and we can
+> add a purpose-trained model for numeric forecasts later. We host on managed cloud services
+> so our data stays in our own environment, with no heavy hardware to run ourselves. We build
+> in Python on established agent frameworks, and our prototype already runs offline. And we
+> connect everything through open standards, with a full trace of every decision. The point
+> to take away: our working prototype already mirrors this design, so what you just saw is
+> realistic, not a mock-up."
+
+**[Slide 10, The payoff, and where we go next] (13:40 to 14:40)**
+> "So what do we gain, and what is next? We expect to protect that fourteen-million-dollar
+> quarterly loss and cut rushed-freight spending by roughly a third, and to turn days of
+> manual analysis into minutes, with full visibility into every critical part right down to
+> its deepest suppliers. The path is simple: first, a three-month pilot on the Stuttgart
+> line, measuring two things, hours of downtime and freight cost; then we learn, feeding
+> planner decisions back in to sharpen it; then we grow it to all twenty-eight plants, and on
+> to other challenges like maintenance and quality. What we are asking for today is approval
+> to run a single-line, single-quarter pilot. It is low cost, low risk, and easy to measure."
+
+**[Thank you] (14:40 to 14:55)**
+> "Thank you. Supply Chain Sentinel catches supply shocks early and keeps Titan's lines
+> running. We would love to hear your questions."
+
+**[Q&A] (14:55 to 15:00 and beyond), all four** (see Part D).
 
 
 
@@ -395,37 +466,46 @@ No dependencies are needed for the default mode. To change the scenario, edit th
   dashboards; the agent *reasons and acts* across them, end-to-end, and proactively traces
   Tier-2/3 risk that today is invisible.
 
-## D.2 Suggested division of labour (adapt to your group size)
+## D.2 Division of labour (four speakers)
 
-| Person | Owns | Slides |
-|---|---|---|
-| Speaker 1 | Problem + goals + risk narrative | 0, 1, 2, 8 |
-| Speaker 2 | Solution + architecture + benefits | 3, 4, 5, 9 |
-| Speaker 3 | Tools + **runs the live demo** + next steps | 6, 7, 10 |
+The talk splits into four parts, one per teammate. The live demo is a part on its own,
+because it is the centrepiece and runs about three and a half minutes. The other three
+parts are contiguous blocks, so there is a single clean handoff between speakers.
 
-(For a 2-person group, merge Speaker 2 and 3; the demo-driver also covers architecture.)
+| Part | Speaker | Owns | Slides |
+|---|---|---|---|
+| 1 | Lorenz Rösgen | The opening and the design (problem, goal, what it sees, the architecture) | Title, 1, 2, 3 |
+| 2 | Marti Solà Puig | The reasoning and the tools (why a supervisor, the tools, how it thinks) | 4, 5, 6 |
+| 3 | **Gilles Hamers** | **The live demo only**, run from the deployed app | 7 |
+| 4 | Dan Tigu | Safety, build and the close (guardrails, technology, payoff, thank you) | 8, 9, 10, Thank you |
+
+The demo runs in the browser at **https://agentic-ai-sentinel.streamlit.app/** (no laptop
+setup needed); the local `python3 run_demo.py --slow` is the fallback. Names map to roles,
+not to who built what, so swap them to suit the group. Whoever is not speaking should
+advance the slides and be ready for questions.
 
 ## D.3 Pre-flight checklist (before you present)
 
-- [ ] Replace **[teammate]** placeholders on the title slide (`presentation/build_pptx.py`,
-      then re-run it) and in this report.
 - [ ] Send **Part C** (prompts + tool descriptions) to the instructor *before* the talk.
-- [ ] On the demo laptop: `cd mvp && python3 run_demo.py --slow` works (Python 3.9+; no
-      internet needed).
-- [ ] Have a **fallback**: a screen-recording or the captured trace in `docs/05_demo_flow.md`
-      in case live execution fails.
-- [ ] Decide who clicks vs who talks during the demo (Speaker 3 clicks, Speaker 1 narrates).
-- [ ] Rehearse once with a timer, target 13-14 min so there's room for Q&A.
-- [ ] Bring the deck as **.pptx** (`presentation/Supply_Chain_Sentinel.pptx`) *and* export a
-      PDF backup.
+- [ ] Open the live demo once in advance: **https://agentic-ai-sentinel.streamlit.app/**
+      (let it wake up; a cold app can take a few seconds to load).
+- [ ] Have a **fallback**: run it locally with `cd mvp && python3 run_demo.py --slow`
+      (Python 3.9+, no internet needed), or use the captured trace in `docs/05_demo_flow.md`.
+- [ ] Confirm the demo driver (Gilles) knows the Taiwan scenario and which button to click
+      at the human-in-the-loop pause (Approve).
+- [ ] Rehearse once with a timer, target 14 min so there is room for Q&A.
+- [ ] Bring the deck as **.pptx** (`presentation/Supply_Chain_Sentinel_Final.pptx`) and an
+      exported PDF backup, on a USB drive as well as in the cloud.
 
 ## D.4 Where everything lives
 
 | Artifact | Path |
 |---|---|
-| Slides (PowerPoint) | `presentation/Supply_Chain_Sentinel.pptx` |
-| Slides (source / regenerate) | `presentation/build_pptx.py`, `presentation/Supply_Chain_Sentinel.md` |
-| This report | `docs/TEAM_REPORT.md` |
+| Final slides (PowerPoint) | `presentation/Supply_Chain_Sentinel_Final.pptx` |
+| Final slides (source / regenerate) | `presentation/build_pptx_final.py`, `presentation/Supply_Chain_Sentinel_Final.md` |
+| Live demo (deployed) | https://agentic-ai-sentinel.streamlit.app/ |
+| Demo dashboard (source) | `mvp/streamlit_app.py`, `mvp/sentinel_runtime.py` |
+| This report | `docs/TEAM_REPORT.md` (PDF: `docs/TEAM_REPORT.pdf`) |
 | Prompts + tools deliverable | this report Part C, or `docs/04_agent_prompts_and_tools.md` |
 | Design-handout answers (§1-8) | `docs/02_solution_design.md` |
 | Architecture detail | `docs/03_architecture.md` |
