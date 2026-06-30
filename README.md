@@ -31,10 +31,11 @@ Volatility & Risk* in the case study (see [docs/01_problem_statement.md](docs/01
 │   ├── 04_agent_prompts_and_tools.md   ← DELIVERABLE to send before the presentation
 │   ├── 05_demo_flow.md            ← exact demo script + expected output
 │   └── 06_risks_and_mitigations.md
-├── presentation/                  ← three deck versions (each .pptx + Marp .md + build script)
+├── presentation/                  ← deck versions (each .pptx + Marp .md + build script)
+│   ├── Supply_Chain_Sentinel_Final.*      ← ★ FINAL deck for the presentation (10 content slides)
 │   ├── Supply_Chain_Sentinel.*            ← v1: board-level business pitch
 │   ├── Supply_Chain_Sentinel_Technical.*  ← v2: business + technical hybrid (rubric-tagged)
-│   └── Supply_Chain_Sentinel_Design.*     ← v3: technical design / architecture deep dive
+│   └── Supply_Chain_Sentinel_Design.*     ← v3: technical design deck (basis for the final)
 ├── mvp/                           ← runnable MVP (pure Python, no API key needed)
 │   ├── run_demo.py                ← CLI demo
 │   ├── streamlit_app.py           ← ★ interactive demo dashboard (live HITL, graph, KPIs)
